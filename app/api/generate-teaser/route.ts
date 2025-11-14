@@ -19,8 +19,6 @@ export async function POST() {
       throw new Error('Invalid agent response for teaser');
     }
 
-    console.log('Agent response script:', response.script);
-
     // Step 2: Generate audio via fal.ai
     console.log('Step 2: Generating teaser audio with fal.ai...');
     const audioUrl = await generateAudio(response.script);

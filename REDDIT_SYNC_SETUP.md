@@ -1,148 +1,105 @@
-# Reddit Daily Sync Setup
+# Reddit Sync Setup
 
-This guide explains how to set up the automated daily Reddit sync that feeds fresh content into your Gradient Knowledge Base.
+This guide explains how to manually sync Reddit content to your Gradient Knowledge Base.
+
+**Note:** Automated scheduling (via GitHub Actions or DO Functions) doesn't work because Reddit blocks cloud/datacenter IP addresses. Manual sync from your local machine works perfectly.
 
 ## Overview
 
 The system fetches top posts from `/r/MachineLearning` and `/r/LocalLLaMA` daily, formats them as markdown, and uploads them to your Gradient Knowledge Base via the API.
 
-## Architecture
+## How It Works
 
 ```
-[DigitalOcean Function - Scheduled 12AM UTC]
+[Manual curl command from your machine]
     ↓
-[Triggers POST /api/reddit-sync]
+[POST /api/reddit-sync endpoint]
     ↓
 1. Fetch top 25 posts from each subreddit (last 24 hours)
 2. Format as markdown
-3. Upload to Gradient Knowledge Base
+3. Upload to DO Spaces (reddit-sync/ folder)
     ↓
-[KB now has fresh Reddit data for agent queries]
+[KB crawls the folder at midnight UTC]
+    ↓
+[Fresh Reddit data available to agent]
 ```
 
 ## Prerequisites
 
-1. **Gradient API Key** - Get from your Gradient dashboard
-2. **Workspace ID** - Found in Gradient dashboard URL
-3. **Knowledge Base ID** - Found in your KB settings
-4. **DigitalOcean Functions** - Set up via doctl CLI
+1. DO Spaces bucket configured
+2. Gradient Knowledge Base with `reddit-sync/` folder as a data source
+3. Environment variables in `.env`
 
 ## Setup Steps
 
-### 1. Configure Environment Variables
+### 1. Ensure Environment Variables are Set
 
-Add these to your `.env` file:
+Your `.env` should already have:
 
 ```bash
-# Gradient Knowledge Base
-GRADIENT_WORKSPACE_ID=your_workspace_id
-GRADIENT_KB_ID=your_kb_id
-GRADIENT_API_KEY=your_api_key
+# DO Spaces (already configured)
+DO_SPACES_ACCESS_KEY_ID=...
+DO_SPACES_SECRET_ACCESS_KEY=...
+DO_SPACES_BUCKET=...
 
 # Security token for the sync endpoint
-SYNC_TOKEN=generate_a_random_secure_string
-
-# Your deployed app URL
-APP_URL=https://your-app.ondigitalocean.app
+SYNC_TOKEN=your_secure_token_here
 ```
 
-To generate a secure token:
+### 2. Configure Gradient Knowledge Base
+
+1. Go to your Gradient KB dashboard
+2. Add a data source
+3. Use URL: `https://your-bucket.tor1.digitaloceanspaces.com/reddit-sync/`
+4. Set crawl schedule to daily (midnight UTC or later)
+
+### 3. Run Manual Sync
+
+Before generating episodes or for your demo:
+
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+# Set your token
+export SYNC_TOKEN=your_token_from_env_file
 
-### 2. Test the Sync Locally
-
-First, test that the Reddit API and Gradient KB integration work:
-
-```bash
+# Run the sync
 curl -X POST http://localhost:3000/api/reddit-sync \
-  -H "Authorization: Bearer YOUR_SYNC_TOKEN"
+  -H "Authorization: Bearer $SYNC_TOKEN" \
+  | jq '.'
 ```
 
-You should see output like:
+Or against your deployed app:
+```bash
+curl -X POST https://your-app.ondigitalocean.app/api/reddit-sync \
+  -H "Authorization: Bearer $SYNC_TOKEN" \
+  | jq '.'
+```
+
+Expected output:
 ```json
 {
   "success": true,
-  "timestamp": "2025-11-14T12:00:00.000Z",
+  "timestamp": "2025-11-14T21:37:58.003Z",
   "synced": ["MachineLearning", "LocalLLaMA"],
-  "errors": []
+  "errors": [],
+  "urls": [...],
+  "message": "Files uploaded successfully. Your KB will crawl them on its next scheduled refresh (midnight UTC)."
 }
 ```
 
-### 3. Deploy to DigitalOcean App Platform
+## Verification
 
-Ensure your environment variables are set in the App Platform dashboard:
-- `GRADIENT_WORKSPACE_ID`
-- `GRADIENT_KB_ID`
-- `GRADIENT_API_KEY`
-- `SYNC_TOKEN`
+### Check DO Spaces
 
-### 4. Deploy the DigitalOcean Function
-
-Install doctl if you haven't:
-```bash
-brew install doctl  # macOS
-# or follow: https://docs.digitalocean.com/reference/doctl/how-to/install/
-```
-
-Connect to your DO account:
-```bash
-doctl auth init
-```
-
-Deploy the function:
-```bash
-cd functions
-doctl serverless deploy --remote-build
-```
-
-### 5. Configure the Function Environment
-
-Set environment variables for the function:
-```bash
-doctl serverless functions config set APP_URL https://your-app.ondigitalocean.app
-doctl serverless functions config set SYNC_TOKEN your_sync_token_here
-```
-
-### 6. Verify the Schedule
-
-Check that the function is scheduled correctly:
-```bash
-doctl serverless functions list
-```
-
-You should see `reddit-sync` with a trigger set for `0 0 * * *` (daily at midnight UTC).
-
-### 7. Manual Test the Function
-
-Trigger the function manually to test:
-```bash
-doctl serverless functions invoke daily-tasks/reddit-sync
-```
-
-## Monitoring
-
-### Check Function Logs
-
-View logs from the scheduled function:
-```bash
-doctl serverless activations logs --function daily-tasks/reddit-sync --follow
-```
-
-### Check Sync Results
-
-View your app's logs to see the sync results:
-```bash
-doctl apps logs YOUR_APP_ID --type run --follow
-```
+Visit your Spaces bucket to see the uploaded markdown files:
+- `https://your-bucket.tor1.digitaloceanspaces.com/reddit-sync/reddit-MachineLearning-2025-11-14.md`
+- `https://your-bucket.tor1.digitaloceanspaces.com/reddit-sync/reddit-LocalLLaMA-2025-11-14.md`
 
 ### Verify in Gradient KB
 
+After the KB crawls at midnight UTC:
 1. Go to your Gradient dashboard
 2. Open your Knowledge Base
-3. Look for documents named `reddit-MachineLearning-YYYY-MM-DD.md` and `reddit-LocalLLaMA-YYYY-MM-DD.md`
-4. They should be updated daily with the latest posts
+3. The Reddit content should be indexed and available to your agent
 
 ## Customization
 
@@ -157,13 +114,6 @@ const SUBREDDITS = [
 ];
 ```
 
-### Change Schedule
-
-Edit `functions/project.yml`:
-```yaml
-cron: "0 8 * * *"  # 8 AM UTC instead of midnight
-```
-
 ### Fetch More Posts
 
 Edit `lib/reddit-sync.ts`:
@@ -171,40 +121,19 @@ Edit `lib/reddit-sync.ts`:
 const posts = await fetchSubredditPosts(subreddit, 50, 'day');  // Fetch 50 instead of 25
 ```
 
-## Troubleshooting
+## Why Not Automated?
 
-### "Unauthorized" Error
-- Check that `SYNC_TOKEN` matches in both the function and your app
+We initially tried GitHub Actions and DigitalOcean Functions for automated daily sync, but Reddit blocks requests from cloud/datacenter IP addresses.
 
-### "Reddit API error"
-- Reddit's public API is rate-limited. Wait a few minutes and try again.
-- Consider adding exponential backoff if this happens frequently
-
-### "Gradient KB API error"
-- Verify `GRADIENT_WORKSPACE_ID`, `GRADIENT_KB_ID`, and `GRADIENT_API_KEY` are correct
-- Check that your API key has write permissions to the KB
-
-### Function Not Running
-- Check the cron schedule: `doctl serverless functions get daily-tasks/reddit-sync`
-- View function logs for errors
-- Manually trigger to test: `doctl serverless functions invoke daily-tasks/reddit-sync`
+**Potential solutions** (for future implementation):
+1. Use Reddit's Official API with OAuth (requires app approval)
+2. Use a proxy service (costs money)
+3. Keep it manual (works perfectly for demos!)
 
 ## Cost Considerations
 
-- **Reddit API**: Free, rate-limited
-- **DO Functions**: ~$0.000017 per GB-second (minimal for this use case)
+- **Reddit API**: Free (using public JSON endpoints)
+- **DO Spaces**: Storage for markdown files (pennies per month)
 - **Gradient KB**: Check your plan's document storage limits
 
-For daily syncs with 2 subreddits, expect:
-- ~2 function invocations/day
-- ~1-2 seconds execution time
-- ~256MB memory
-- **Cost**: < $0.01/month
-
-## Next Steps
-
-Once this is working, you can:
-1. Add more subreddits to track
-2. Set up similar syncs for other sources (HackerNews, ArXiv, etc.)
-3. Add Slack/email notifications for sync failures
-4. Create a dashboard to view sync status
+Manual syncs have zero compute costs!

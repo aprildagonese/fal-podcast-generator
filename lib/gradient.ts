@@ -38,13 +38,11 @@ export async function queryAgent(
 
   // OpenAI-compatible response format
   let content = data.choices?.[0]?.message?.content || '';
-  console.log('Raw agent response:', content.substring(0, 200) + '...');
 
   // Try to extract JSON from markdown code fences if present
   const jsonBlockMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/i);
   if (jsonBlockMatch) {
     content = jsonBlockMatch[1].trim();
-    console.log('Extracted JSON from markdown code fence');
   } else {
     // Strip markdown code fences from beginning/end if present
     content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
@@ -54,7 +52,6 @@ export async function queryAgent(
   let parsedContent;
   try {
     parsedContent = JSON.parse(content);
-    console.log('Successfully parsed JSON response');
   } catch (e) {
     console.log('Agent returned plain text instead of JSON - using as script');
     // If not JSON, treat as plain text script

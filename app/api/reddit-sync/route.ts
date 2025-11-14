@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       errors: result.errors,
       urls: result.urls,
       message: result.urls.length > 0
-        ? `Add these URLs to your Gradient Knowledge Base data sources: ${result.urls.join(', ')}`
+        ? `Files uploaded successfully. Your KB will crawl them on its next scheduled refresh (midnight UTC).`
         : 'No new documents created',
     });
   } catch (error: any) {

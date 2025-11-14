@@ -1,9 +1,0 @@
-packages:
-  - name: daily-podcast
-    runtime: python:3.11
-    environment:
-      APP_URL: ${APP_URL}
-    limits:
-      timeout: 300000  # 5 minutes
-      memory: 256
-    schedule: '0 8 * * *'  # Daily at 8:00 AM UTC
