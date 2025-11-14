@@ -19,8 +19,16 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
   useEffect(() => {
     if (audioRef.current && currentItem) {
       audioRef.current.load();
+      audioRef.current.playbackRate = playbackRate; // Apply saved playback speed
       setCurrentTime(0);
-      setIsPlaying(false);
+
+      // Auto-start playback
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((error) => {
+        console.error('Auto-play failed:', error);
+        setIsPlaying(false);
+      });
     }
   }, [currentItem]);
 

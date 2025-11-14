@@ -12,6 +12,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentItem, setCurrentItem] = useState<Episode | Teaser | null>(null);
+  const [showAllEpisodes, setShowAllEpisodes] = useState(false);
+  const [showAllTeasers, setShowAllTeasers] = useState(false);
 
   const fetchEpisodes = async () => {
     try {
@@ -125,17 +127,44 @@ export default function Home() {
           )}
 
           {!loading && episodes.length > 0 && (
-            <div className="space-y-6">
-              {episodes.map((episode, index) => (
-                <EpisodeCard
-                  key={episode.id}
-                  episode={episode}
-                  isLatest={index === 0}
-                  isPlaying={currentItem?.id === episode.id}
-                  onPlay={() => setCurrentItem(episode)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="space-y-6">
+                {(showAllEpisodes ? episodes : episodes.slice(0, 5)).map((episode, index) => (
+                  <EpisodeCard
+                    key={episode.id}
+                    episode={episode}
+                    isLatest={index === 0}
+                    isPlaying={currentItem?.id === episode.id}
+                    onPlay={() => setCurrentItem(episode)}
+                  />
+                ))}
+              </div>
+
+              {episodes.length > 5 && (
+                <div className="text-center mt-6">
+                  <button
+                    onClick={() => setShowAllEpisodes(!showAllEpisodes)}
+                    className="text-do-blue hover:underline font-semibold flex items-center gap-2 mx-auto"
+                  >
+                    {showAllEpisodes ? (
+                      <>
+                        Show Less
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        Show {episodes.length - 5} More Episodes
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -146,7 +175,7 @@ export default function Home() {
               Teasers
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {teasers.map((teaser) => (
+              {(showAllTeasers ? teasers : teasers.slice(0, 5)).map((teaser) => (
                 <button
                   key={teaser.id}
                   onClick={() => setCurrentItem(teaser)}
@@ -172,6 +201,31 @@ export default function Home() {
                 </button>
               ))}
             </div>
+
+            {teasers.length > 5 && (
+              <div className="text-center mt-6">
+                <button
+                  onClick={() => setShowAllTeasers(!showAllTeasers)}
+                  className="text-do-blue hover:underline font-semibold flex items-center gap-2 mx-auto"
+                >
+                  {showAllTeasers ? (
+                    <>
+                      Show Less
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </>
+                  ) : (
+                    <>
+                      Show {teasers.length - 5} More Teasers
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
