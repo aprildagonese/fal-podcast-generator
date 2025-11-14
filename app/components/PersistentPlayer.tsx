@@ -91,7 +91,7 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
 
   if (!currentItem) return null;
 
-  const title = 'title' in currentItem ? currentItem.title : `Teaser: ${currentItem.id}`;
+  const title = currentItem.title;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50">
