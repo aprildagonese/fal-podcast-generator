@@ -112,18 +112,46 @@ Example:
 Return ONLY valid JSON.`;
   }
 
-  return `Based on the knowledge base, summarize the MOST IMPORTANT recent AI news and discussions.
+  return `Generate a podcast episode about recent AI news.
 
-PRIORITIZATION (in order):
-1. First, look for major news from ${date} (today)
-2. If nothing significant from today, look at yesterday's news
-3. Only go back further if absolutely necessary - always prioritize the most recent date available
+TODAY'S DATE: ${date}
 
-STORY SELECTION - Choose only the TOP 3-5 most important stories based on:
-- Impact on the AI field (major breakthroughs, model releases, research findings)
-- Industry significance (funding rounds, company announcements, policy changes)
-- Practical implications (new capabilities, tools, or applications)
-- Community buzz (highly discussed topics on HN/Reddit)
+CRITICAL TWO-STEP PROCESS:
+
+STEP 1 - FIND THE 20 MOST RECENT ITEMS:
+Comprehensively scan ALL sources in the knowledge base and identify the 20 most recently published items. Use proper date parsing for each source type:
+
+DATE PARSING BY SOURCE TYPE:
+- ArXiv papers: ID format is "YYMM.NNNNN" where YY=year, MM=month
+  Example: "2511.08548" = November 2025 (25=2025, 11=November)
+  Example: "2510.12345" = October 2025 (TOO OLD if today is Nov 14)
+  Example: "2509.67890" = September 2025 (WAY TOO OLD)
+
+- MarkTechPost articles: Date in URL path "/YYYY/MM/DD/"
+  Example: "/2025/11/14/" = November 14, 2025 (TODAY - EXCELLENT)
+  Example: "/2025/11/13/" = November 13, 2025 (YESTERDAY - GOOD)
+  Example: "/2025/10/15/" = October 15, 2025 (TOO OLD)
+
+- Reddit posts: Filename format "reddit-SubredditName-YYYY-MM-DD.md"
+  Example: "reddit-LocalLLaMA-2025-11-14.md" = November 14, 2025 (TODAY - EXCELLENT)
+  Example: "reddit-MachineLearning-2025-11-13.md" = November 13, 2025 (YESTERDAY - GOOD)
+
+- Hugging Face papers: Similar to ArXiv, check the paper ID or URL date
+
+ONLY include items from the last 2 days (within 2 days of ${date}).
+
+STEP 2 - SELECT 3-5 MOST NEWSWORTHY:
+From those 20 most recent items, select the 3-5 most impactful and newsworthy stories. Prioritize:
+- Major model releases or breakthroughs
+- Significant research findings with real-world impact
+- Important industry announcements
+- Game-changing technical developments
+- Active community discussions with high engagement
+
+Include a MIX of source types:
+- Research papers (ArXiv, Hugging Face)
+- Community discussions (Reddit)
+- Industry news (MarkTechPost, Hacker News)
 
 RETURN YOUR RESPONSE AS VALID, COMPLETE JSON with this exact structure:
 {
@@ -134,6 +162,9 @@ RETURN YOUR RESPONSE AS VALID, COMPLETE JSON with this exact structure:
 }
 
 IMPORTANT: Keep the response concise to avoid truncation. Limit script to 2-3 minutes of content. Use short source titles.
+
+DATE VERIFICATION:
+Before including any source, verify its date is within the last 2 days of ${date}. If you're including a paper from ArXiv ID "2509.XXXXX" (September) when today is November, that's WRONG - find more recent content.
 
 CRITICAL - THE SCRIPT FIELD:
 - Contains ONLY the text to be read aloud by text-to-speech
@@ -150,6 +181,13 @@ EXAMPLE SCRIPT (this is what goes in the "script" field):
 "Welcome to AI News Update. This week brings three major developments in artificial intelligence. First, OpenAI has released a new reasoning model showing significant improvements in complex problem-solving. This matters because it represents a shift toward more deliberate AI thinking. The AI community is particularly excited because this could unlock new capabilities in scientific research and mathematical proof. Second, researchers at Stanford..."
 
 IMPORTANT: If using news from a day or two ago (not ${date}), don't mention exact dates in the script. Say "this week in AI" or "recent developments".
+
+EXAMPLE OF GOOD SOURCE SELECTION (if today is 2025-11-14):
+✅ ArXiv paper "2511.08548" (November 2025 - GOOD, very recent)
+✅ MarkTechPost article from "/2025/11/13/" (Yesterday - GOOD)
+✅ Reddit "reddit-LocalLLaMA-2025-11-14.md" (Today - EXCELLENT)
+❌ ArXiv paper "2510.04399" (October 2025 - TOO OLD)
+❌ ArXiv paper "2509.21825" (September 2025 - WAY TOO OLD)
 
 Return ONLY valid JSON - be selective and engaging!`;
 }
