@@ -1,0 +1,19 @@
+name: Daily Reddit Sync
+
+on:
+  schedule:
+    # Run at 11:50 PM UTC daily (10 minutes before KB recrawl at midnight)
+    - cron: '50 23 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Reddit Sync
+        run: |
+          curl -X POST ${{ secrets.APP_URL }}/api/reddit-sync \
+            -H "Authorization: Bearer ${{ secrets.SYNC_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --fail-with-body \
+            --verbose
