@@ -71,7 +71,7 @@ export default function Home() {
                 className="w-5 h-5"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
-              <span>fal.ai TTS</span>
+              <span>fal.ai TTS via DO Gradient</span>
             </div>
             <span className="hidden sm:inline">•</span>
             <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function Home() {
               Teasers
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(showAllTeasers ? teasers : teasers.slice(0, 5)).map((teaser) => (
+              {(showAllTeasers ? teasers : teasers.slice(0, 5)).map((teaser, index) => (
                 <button
                   key={teaser.id}
                   onClick={() => setCurrentItem(teaser)}
@@ -185,16 +185,21 @@ export default function Home() {
                       : 'border-gray-200 dark:border-gray-700'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Teaser: {new Date(teaser.createdAt).toLocaleDateString()}
-                    </h3>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {index === 0 && (
+                      <span className="inline-block bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        Latest Teaser
+                      </span>
+                    )}
                     {currentItem?.id === teaser.id && (
                       <span className="text-xs bg-do-blue text-white px-2 py-1 rounded-full">
                         Playing
                       </span>
                     )}
                   </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                    {teaser.title}
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(teaser.createdAt).toLocaleDateString()}
                   </p>

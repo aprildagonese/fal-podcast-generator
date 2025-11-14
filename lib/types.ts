@@ -10,6 +10,7 @@ export interface Episode {
 
 export interface Teaser {
   id: string;
+  title: string;
   audioUrl: string;
   duration: number;
   createdAt: string;
@@ -34,6 +35,7 @@ export interface AgentResponse {
 }
 
 export interface TeaserAgentResponse {
+  title: string;
   script: string;
 }
 

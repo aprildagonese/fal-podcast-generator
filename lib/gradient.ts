@@ -38,16 +38,25 @@ export async function queryAgent(
 
   // OpenAI-compatible response format
   let content = data.choices?.[0]?.message?.content || '';
+  console.log('Raw agent response:', content.substring(0, 200) + '...');
 
-  // Strip markdown code fences if present (```json ... ```)
-  content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  // Try to extract JSON from markdown code fences if present
+  const jsonBlockMatch = content.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/i);
+  if (jsonBlockMatch) {
+    content = jsonBlockMatch[1].trim();
+    console.log('Extracted JSON from markdown code fence');
+  } else {
+    // Strip markdown code fences from beginning/end if present
+    content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  }
 
   // Try to parse as JSON if the agent returns structured data
   let parsedContent;
   try {
     parsedContent = JSON.parse(content);
+    console.log('Successfully parsed JSON response');
   } catch (e) {
-    console.error('Failed to parse agent response as JSON:', e);
+    console.log('Agent returned plain text instead of JSON - using as script');
     // If not JSON, treat as plain text script
     parsedContent = { script: content };
   }
@@ -55,6 +64,7 @@ export async function queryAgent(
   // Parse the agent's response
   if (mode === 'teaser') {
     return {
+      title: parsedContent.title || 'AI News Teaser',
       script: parsedContent.script || parsedContent.response || content,
     };
   }
@@ -83,9 +93,26 @@ Choose the single most impactful story - look for:
 - Important industry announcements
 - Game-changing developments
 
-Return ONLY the script text that will be read aloud. Keep it punchy and exciting - something that would make people want to hear more!
+RETURN YOUR RESPONSE AS VALID JSON with this exact structure:
+{
+  "title": "A short, catchy title (5-10 words)",
+  "script": "Your exciting teaser script here - keep it punchy!"
+}
 
-Example: "Breaking: A new 3 billion parameter model just outperformed GPT-4 on reasoning tasks!"`;
+IMPORTANT:
+- The "title" should be brief and attention-grabbing
+- The "script" field contains ONLY the text to be read aloud
+- Keep the script short (10-15 seconds max)
+- Make it exciting and engaging
+- NO labels or markers in the script
+
+Example:
+{
+  "title": "GPT-5 Outperforms All Models",
+  "script": "Breaking: A new 3 billion parameter model just outperformed GPT-4 on reasoning tasks!"
+}
+
+Return ONLY valid JSON.`;
   }
 
   return `Based on the knowledge base, summarize the MOST IMPORTANT recent AI news and discussions.

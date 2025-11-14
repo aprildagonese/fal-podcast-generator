@@ -19,6 +19,8 @@ export async function POST() {
       throw new Error('Invalid agent response for teaser');
     }
 
+    console.log('Agent response script:', agentResponse.script);
+
     // Step 2: Generate audio via fal.ai
     console.log('Step 2: Generating teaser audio with fal.ai...');
     const audioUrl = await generateAudio(agentResponse.script);
@@ -36,6 +38,7 @@ export async function POST() {
     console.log('Step 5: Saving teaser metadata...');
     const teaser: Teaser = {
       id: `${today}-${timestamp}`,
+      title: agentResponse.title,
       audioUrl: spacesUrl,
       duration: 5, // Teasers are ~5 seconds
       createdAt: new Date().toISOString(),

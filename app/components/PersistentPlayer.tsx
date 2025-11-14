@@ -22,12 +22,9 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
       audioRef.current.playbackRate = playbackRate; // Apply saved playback speed
       setCurrentTime(0);
 
-      // Auto-start playback
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch((error) => {
+      // Auto-start playback (state will be updated by play/pause event listeners)
+      audioRef.current.play().catch((error) => {
         console.error('Auto-play failed:', error);
-        setIsPlaying(false);
       });
     }
   }, [currentItem]);
@@ -38,15 +35,21 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
     };
   }, []);
@@ -60,7 +63,7 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
     } else {
       audio.play();
     }
-    setIsPlaying(!isPlaying);
+    // State will be updated by play/pause event listeners
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
