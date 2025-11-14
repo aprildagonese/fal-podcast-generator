@@ -12,8 +12,20 @@ jobs:
     steps:
       - name: Trigger Reddit Sync
         run: |
-          curl -X POST ${{ secrets.APP_URL }}/api/reddit-sync \
+          response=$(curl -X POST ${{ secrets.APP_URL }}/api/reddit-sync \
             -H "Authorization: Bearer ${{ secrets.SYNC_TOKEN }}" \
             -H "Content-Type: application/json" \
             --fail-with-body \
-            --verbose
+            --silent \
+            --show-error)
+
+          echo "Reddit sync response:"
+          echo "$response" | jq '.'
+
+          # Check if sync was successful
+          if echo "$response" | jq -e '.success == true' > /dev/null; then
+            echo "✅ Reddit sync completed successfully"
+          else
+            echo "❌ Reddit sync failed"
+            exit 1
+          fi
