@@ -9,9 +9,11 @@ interface EpisodeCardProps {
   isPlaying?: boolean;
   onPlay: () => void;
   onPause: () => void;
+  adminMode?: boolean;
+  onDelete?: () => void;
 }
 
-export default function EpisodeCard({ episode, isLatest, isPlaying, onPlay, onPause }: EpisodeCardProps) {
+export default function EpisodeCard({ episode, isLatest, isPlaying, onPlay, onPause, adminMode, onDelete }: EpisodeCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -71,21 +73,37 @@ export default function EpisodeCard({ episode, isLatest, isPlaying, onPlay, onPa
             {formatDate(episode.createdAt)}
           </p>
         </div>
-        <button
-          onClick={handlePlayClick}
-          className="flex-shrink-0 bg-do-blue hover:bg-blue-600 text-white rounded-full p-3 transition-colors"
-          aria-label={isPlaying ? "Pause episode" : "Play episode"}
-        >
-          {isPlaying ? (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-            </svg>
+        <div className="flex gap-2">
+          {adminMode && onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="flex-shrink-0 bg-red-600 hover:bg-red-700 text-white rounded-full p-3 transition-colors"
+              aria-label="Delete episode"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </button>
           )}
-        </button>
+          <button
+            onClick={handlePlayClick}
+            className="flex-shrink-0 bg-do-blue hover:bg-blue-600 text-white rounded-full p-3 transition-colors"
+            aria-label={isPlaying ? "Pause episode" : "Play episode"}
+          >
+            {isPlaying ? (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {isExpanded && (

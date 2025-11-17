@@ -5,6 +5,7 @@ import { Episode, Teaser } from '@/lib/types';
 import EpisodeCard from './components/EpisodeCard';
 import GenerateControls from './components/GenerateControls';
 import PersistentPlayer from './components/PersistentPlayer';
+import PasswordModal from './components/PasswordModal';
 
 export default function Home() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -15,6 +16,9 @@ export default function Home() {
   const [showAllEpisodes, setShowAllEpisodes] = useState(false);
   const [showAllTeasers, setShowAllTeasers] = useState(false);
   const [playerIsPlaying, setPlayerIsPlaying] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
+  const [lastShiftPress, setLastShiftPress] = useState(0);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const fetchEpisodes = async () => {
     try {
@@ -38,6 +42,56 @@ export default function Home() {
     fetchEpisodes();
   }, []);
 
+  // Secret admin mode trigger: Press D while holding Shift twice quickly
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === 'D') {
+        const now = Date.now();
+        if (now - lastShiftPress < 500) {
+          // Double press detected!
+          if (adminMode) {
+            // Exit admin mode
+            setAdminMode(false);
+            sessionStorage.removeItem('adminPassword');
+            alert('👋 Admin mode deactivated.');
+          } else {
+            // Show password modal
+            setShowPasswordModal(true);
+          }
+        }
+        setLastShiftPress(now);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lastShiftPress, adminMode]);
+
+  const handlePasswordSubmit = async (password: string) => {
+    setShowPasswordModal(false);
+
+    try {
+      // Verify password with API
+      const response = await fetch('/api/verify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAdminMode(true);
+        sessionStorage.setItem('adminPassword', password);
+        alert('🎉 Admin mode activated! Delete buttons now visible. Press Shift+D+D again to exit.');
+      } else {
+        alert('❌ Invalid password');
+      }
+    } catch (error) {
+      alert('❌ Error verifying password');
+    }
+  };
+
   const handleGenerated = () => {
     // Refresh episodes list
     fetchEpisodes();
@@ -46,6 +100,36 @@ export default function Home() {
   const handlePlayingChange = useCallback((isPlaying: boolean) => {
     setPlayerIsPlaying(isPlaying);
   }, []);
+
+  const handleDelete = async (id: string, type: 'episode' | 'teaser') => {
+    const password = sessionStorage.getItem('adminPassword');
+    if (!password) return;
+
+    if (!confirm(`Delete this ${type}?`)) return;
+
+    try {
+      const response = await fetch(
+        `/api/delete-item?id=${encodeURIComponent(id)}&type=${type}&password=${encodeURIComponent(password)}`,
+        { method: 'DELETE' }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`✅ ${type === 'episode' ? 'Episode' : 'Teaser'} deleted!`);
+        fetchEpisodes();
+      } else {
+        alert(`❌ Failed: ${data.error}`);
+      }
+    } catch (error: any) {
+      alert(`❌ Error: ${error.message}`);
+    }
+  };
+
+  // Check if there's an episode or teaser for today
+  const today = new Date().toISOString().split('T')[0];
+  const hasEpisodeToday = episodes.some(ep => ep.id.startsWith(today));
+  const hasTeaserToday = teasers.some(teaser => teaser.id.startsWith(today));
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-32">
@@ -93,7 +177,11 @@ export default function Home() {
 
         {/* Generate Controls */}
         <div className="mb-12">
-          <GenerateControls onGenerated={handleGenerated} />
+          <GenerateControls
+            onGenerated={handleGenerated}
+            hasEpisodes={hasEpisodeToday}
+            hasTeasers={hasTeaserToday}
+          />
         </div>
 
         {/* Episodes List */}
@@ -142,6 +230,8 @@ export default function Home() {
                     isPlaying={currentItem?.id === episode.id && playerIsPlaying}
                     onPlay={() => setCurrentItem(episode)}
                     onPause={() => setCurrentItem(null)}
+                    adminMode={adminMode}
+                    onDelete={() => handleDelete(episode.id, 'episode')}
                   />
                 ))}
               </div>
@@ -182,40 +272,52 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(showAllTeasers ? teasers : teasers.slice(0, 5)).map((teaser, index) => (
-                <button
-                  key={teaser.id}
-                  onClick={() => {
-                    if (currentItem?.id === teaser.id && playerIsPlaying) {
-                      setCurrentItem(null);
-                    } else {
-                      setCurrentItem(teaser);
-                    }
-                  }}
-                  className={`text-left bg-white dark:bg-gray-800 border rounded-lg p-6 shadow-sm hover:shadow-md transition-all ${
-                    currentItem?.id === teaser.id && playerIsPlaying
-                      ? 'border-do-blue ring-2 ring-do-blue'
-                      : 'border-gray-200 dark:border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {index === 0 && (
-                      <span className="inline-block bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                        Latest Teaser
-                      </span>
-                    )}
-                    {currentItem?.id === teaser.id && playerIsPlaying && (
-                      <span className="text-xs bg-do-blue text-white px-2 py-1 rounded-full">
-                        Playing
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                    {teaser.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(teaser.createdAt).toLocaleDateString()}
-                  </p>
-                </button>
+                <div key={teaser.id} className="relative flex">
+                  <button
+                    onClick={() => {
+                      if (currentItem?.id === teaser.id && playerIsPlaying) {
+                        setCurrentItem(null);
+                      } else {
+                        setCurrentItem(teaser);
+                      }
+                    }}
+                    className={`w-full text-left bg-white dark:bg-gray-800 border rounded-lg p-6 shadow-sm hover:shadow-md transition-all flex flex-col ${
+                      currentItem?.id === teaser.id && playerIsPlaying
+                        ? 'border-do-blue ring-2 ring-do-blue'
+                        : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {index === 0 && (
+                        <span className="inline-block bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                          Latest Teaser
+                        </span>
+                      )}
+                      {currentItem?.id === teaser.id && playerIsPlaying && (
+                        <span className="text-xs bg-do-blue text-white px-2 py-1 rounded-full">
+                          Playing
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 flex-grow">
+                      {teaser.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-auto">
+                      {new Date(teaser.createdAt).toLocaleDateString()}
+                    </p>
+                  </button>
+                  {adminMode && (
+                    <button
+                      onClick={() => handleDelete(teaser.id, 'teaser')}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
+                      aria-label="Delete teaser"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -259,6 +361,13 @@ export default function Home() {
         currentItem={currentItem}
         onClose={() => setCurrentItem(null)}
         onPlayingChange={handlePlayingChange}
+      />
+
+      {/* Password Modal */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onSubmit={handlePasswordSubmit}
+        onCancel={() => setShowPasswordModal(false)}
       />
     </main>
   );

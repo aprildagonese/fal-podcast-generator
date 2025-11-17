@@ -4,9 +4,11 @@ import { useState } from 'react';
 
 interface GenerateControlsProps {
   onGenerated: () => void;
+  hasEpisodes: boolean;
+  hasTeasers: boolean;
 }
 
-export default function GenerateControls({ onGenerated }: GenerateControlsProps) {
+export default function GenerateControls({ onGenerated, hasEpisodes, hasTeasers }: GenerateControlsProps) {
   const [isGeneratingEpisode, setIsGeneratingEpisode] = useState(false);
   const [isGeneratingTeaser, setIsGeneratingTeaser] = useState(false);
   const [status, setStatus] = useState('');
@@ -98,21 +100,35 @@ export default function GenerateControls({ onGenerated }: GenerateControlsProps)
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          onClick={generateEpisode}
-          disabled={isGeneratingEpisode || isGeneratingTeaser}
-          className="bg-do-blue hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          {isGeneratingEpisode ? 'Generating...' : 'Generate Full Episode'}
-        </button>
+        <div className="flex flex-col items-center gap-2 sm:w-64">
+          <button
+            onClick={generateEpisode}
+            disabled={isGeneratingEpisode || isGeneratingTeaser || hasEpisodes}
+            className="bg-do-blue hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors w-full"
+          >
+            {isGeneratingEpisode ? 'Generating...' : 'Generate Full Episode'}
+          </button>
+          {hasEpisodes && !isGeneratingEpisode && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              Episode exists for today. Generate a new one tomorrow.
+            </p>
+          )}
+        </div>
 
-        <button
-          onClick={generateTeaser}
-          disabled={isGeneratingEpisode || isGeneratingTeaser}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          {isGeneratingTeaser ? 'Generating...' : 'Generate Teaser'}
-        </button>
+        <div className="flex flex-col items-center gap-2 sm:w-64">
+          <button
+            onClick={generateTeaser}
+            disabled={isGeneratingEpisode || isGeneratingTeaser || hasTeasers}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors w-full"
+          >
+            {isGeneratingTeaser ? 'Generating...' : 'Generate Teaser'}
+          </button>
+          {hasTeasers && !isGeneratingTeaser && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              Teaser exists for today. Generate a new one tomorrow.
+            </p>
+          )}
+        </div>
       </div>
 
       {status && (
