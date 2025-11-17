@@ -6,28 +6,35 @@ Automated daily AI news podcast powered by **DigitalOcean Gradient** (Anthropic 
 
 ## Features
 
-- 🤖 **AI-powered content generation** using Anthropic Claude via DO Gradient
-- 📰 **Automatic news aggregation** from Hacker News, Reddit, ArXiv, and more
-- 🎙️ **Natural-sounding TTS** using fal.ai's ElevenLabs integration
-- ☁️ **Fully hosted on DigitalOcean** (App Platform + Spaces + Functions)
-- ⚡ **Manual triggers** for instant episode/teaser generation
-- 📅 **Daily automation** via scheduled DO Functions
+- 🤖 **AI-powered content generation** using Anthropic Claude Sonnet 4.5 via DO Gradient
+- 📰 **Automatic news aggregation** from Hacker News, ArXiv, Hugging Face, MarkTechPost
+- 📱 **Manual Reddit sync** from r/MachineLearning, r/LocalLLaMA, r/artificial
+- 🎙️ **Natural-sounding TTS** using fal.ai's ElevenLabs Multilingual v2
+- ☁️ **Fully hosted on DigitalOcean** (App Platform + Spaces)
+- ⚡ **Smart generation controls** - buttons gray out when content exists for today
+- 🎵 **Persistent audio player** with playback speed controls (0.5x - 2x, default 1.25x)
+- 🔍 **Date-aware source selection** - agent intelligently parses dates across different formats
 
 ## Architecture
 
 ```
-Knowledge Base (DO)
-  ↓ (auto-scrapes daily)
-Gradient Agent (Anthropic)
+Manual Reddit Sync (local) → DO Spaces (reddit-sync/)
+                                  ↓
+Knowledge Base (DO) ← Crawls at midnight UTC
+  ↓ (auto-scrapes Hacker News, ArXiv, etc.)
   ↓
+Gradient Agent (Anthropic Claude Sonnet 4.5)
+  ↓ (date-aware 2-step selection)
 Script Generator
   ↓
-fal.ai TTS
+fal.ai TTS (ElevenLabs v2)
   ↓
-DO Spaces (storage)
+DO Spaces (audio + metadata)
   ↓
-Next.js App (App Platform)
+Next.js 16 App (App Platform)
 ```
+
+**Note:** Reddit sync is manual because Reddit blocks cloud/datacenter IPs. Simple curl command syncs from local machine.
 
 ## Prerequisites
 
@@ -56,25 +63,29 @@ Required variables:
 - `DO_SPACES_ACCESS_KEY_ID` - Your DO Spaces access key ID
 - `DO_SPACES_SECRET_ACCESS_KEY` - Your DO Spaces secret access key
 - `DO_SPACES_BUCKET` - Bucket name (create one first!)
+- `DO_SPACES_ENDPOINT` - e.g., nyc3.digitaloceanspaces.com
+- `DO_SPACES_REGION` - e.g., nyc3
 - `AGENT_ENDPOINT` - Your Gradient agent endpoint URL (e.g., https://your-agent.ondigitalocean.app)
 - `AGENT_ACCESS_KEY` - Endpoint access key from agent Settings
-- `MODEL_ACCESS_KEY` - Model access key for fal.ai TTS (from DO console)
+- `MODEL_ACCESS_KEY` - Model access key for fal.ai TTS (from DO Inference API)
+- `SYNC_TOKEN` - Random secure token for Reddit sync endpoint
 
 ### 3. Configure Knowledge Base
 
 In the DigitalOcean Gradient platform:
 
 1. Create a new Knowledge Base
-2. Add these URLs to scrape:
+2. Add these URLs to auto-scrape:
    - `https://news.ycombinator.com/`
-   - `https://www.reddit.com/r/MachineLearning/`
-   - `https://www.reddit.com/r/LocalLLaMA/`
    - `https://arxiv.org/list/cs.AI/recent`
    - `https://huggingface.co/papers`
    - `https://www.marktechpost.com/`
-3. Set scraping schedule to daily
+   - `https://YOUR-BUCKET.YOUR-REGION.digitaloceanspaces.com/reddit-sync/` (for Reddit posts)
+3. Set scraping schedule to daily (midnight UTC recommended)
 4. Create an Agent and link it to this Knowledge Base
-5. Copy the Agent ID to your `.env` file
+5. Copy the Agent endpoint URL and access key to your `.env` file
+
+**Note:** Don't add Reddit URLs directly - they'll be blocked. Instead, use the manual Reddit sync to populate the `reddit-sync/` folder in your Spaces bucket, and the KB will crawl that.
 
 ### 4. Run Locally
 
@@ -110,39 +121,54 @@ App Platform will automatically:
 - Set up HTTPS
 - Provide a URL like `your-app.ondigitalocean.app`
 
-### Deploy Daily Function
+### Manual Reddit Sync
+
+Before generating episodes (or before your demo), sync Reddit posts:
 
 ```bash
-cd functions
-doctl serverless deploy daily-podcast
+export SYNC_TOKEN=your_token_from_env_file
+
+# Local development
+curl -X POST http://localhost:3000/api/reddit-sync \
+  -H "Authorization: Bearer $SYNC_TOKEN" | jq '.'
+
+# Production
+curl -X POST https://your-app.ondigitalocean.app/api/reddit-sync \
+  -H "Authorization: Bearer $SYNC_TOKEN" | jq '.'
 ```
 
-See [functions/README.md](./functions/README.md) for detailed instructions.
+This fetches top 25 posts from r/MachineLearning, r/LocalLLaMA, and r/artificial (last 24h) and uploads them to DO Spaces. Your Gradient KB will crawl them at midnight UTC.
+
+See [REDDIT_SYNC_SETUP.md](./REDDIT_SYNC_SETUP.md) for detailed instructions.
 
 ## Project Structure
 
 ```
 fal_podcast/
 ├── app/
-│   ├── api/                    # API routes
-│   │   ├── generate-episode/   # Full 3-min episode
-│   │   ├── generate-teaser/    # 5-sec teaser
-│   │   └── episodes/           # List episodes
+│   ├── api/                    # Next.js API routes
+│   │   ├── generate-episode/   # Full episode generation
+│   │   ├── generate-teaser/    # Teaser generation
+│   │   ├── episodes/           # Fetch episodes list
+│   │   ├── reddit-sync/        # Manual Reddit sync
+│   │   └── test-agent/         # Test agent responses
 │   ├── components/             # React components
-│   │   ├── AudioPlayer.tsx
-│   │   ├── EpisodeCard.tsx
-│   │   └── GenerateControls.tsx
+│   │   ├── PersistentPlayer.tsx # Audio player with speed controls
+│   │   ├── EpisodeCard.tsx      # Episode display with play/pause
+│   │   ├── GenerateControls.tsx # Smart generation buttons
+│   │   └── PasswordModal.tsx    # Secure modal input
 │   ├── page.tsx                # Homepage
-│   └── layout.tsx
+│   └── layout.tsx              # Root layout
 ├── lib/
-│   ├── gradient.ts             # Gradient API client
-│   ├── fal.ts                  # fal.ai TTS client
-│   ├── spaces.ts               # DO Spaces client
-│   ├── metadata.ts             # Episode metadata
+│   ├── gradient.ts             # Gradient Agent client + prompts
+│   ├── fal.ts                  # fal.ai TTS client (with polling)
+│   ├── spaces.ts               # DO Spaces client (AWS SDK v3)
+│   ├── metadata.ts             # Episode metadata management
+│   ├── reddit.ts               # Reddit API client
+│   ├── reddit-sync.ts          # Reddit sync orchestration
 │   └── types.ts                # TypeScript types
-├── functions/
-│   └── daily-podcast/          # DO Function for daily automation
-├── claude.md                   # Full project plan
+├── CLAUDE.md                   # Full project plan & learnings
+├── REDDIT_SYNC_SETUP.md        # Reddit sync documentation
 └── README.md                   # This file
 ```
 
@@ -163,12 +189,6 @@ Same process, but:
 - Simpler prompt: "most interesting story"
 - Shorter script (~1 sentence)
 - Faster for testing
-
-### Daily Automation
-
-DO Function runs at 8 AM UTC daily:
-- Calls `/api/generate-episode`
-- New episode ready every morning!
 
 ## API Endpoints
 
@@ -241,13 +261,6 @@ Edit `lib/fal.ts`:
 const DEFAULT_VOICE = 'Bella'; // or 'Domi', 'Josh', etc.
 ```
 
-### Adjust Schedule
-
-Edit `functions/daily-podcast/project.yml`:
-```yaml
-schedule: '0 9 * * *'  # 9 AM instead of 8 AM
-```
-
 ### Modify Prompts
 
 Edit `lib/gradient.ts` → `buildPrompt()` function
@@ -274,21 +287,20 @@ Edit `lib/gradient.ts` → `buildPrompt()` function
 
 ## Cost Estimate
 
-Per day:
+Per episode generated:
 - Knowledge Base indexing: ~$0.01
 - Gradient API (Anthropic): ~$0.05-0.10
 - fal.ai TTS: ~$0.02-0.05
 - DO Spaces: ~$0.001
 - App Platform: $5-12/month (flat rate)
-- DO Functions: Free tier
 
-**Total: ~$5-15/month** for daily podcast automation
+**Total: ~$5-15/month** (assuming daily generation)
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS
+- **Frontend**: Next.js 16, React, TypeScript, TailwindCSS
 - **AI/ML**: DigitalOcean Gradient, Anthropic Claude, fal.ai TTS
-- **Infrastructure**: DigitalOcean App Platform, Spaces, Functions
+- **Infrastructure**: DigitalOcean App Platform, Spaces
 - **Storage**: DO Spaces (S3-compatible object storage)
 
 ## License
@@ -298,10 +310,10 @@ MIT
 ## Support
 
 For issues or questions:
-- Check [claude.md](./claude.md) for detailed architecture
-- Review [functions/README.md](./functions/README.md) for DO Functions setup
+- Check [CLAUDE.md](./CLAUDE.md) for detailed architecture and project plan
+- Review [REDDIT_SYNC_SETUP.md](./REDDIT_SYNC_SETUP.md) for Reddit sync instructions
 - Open an issue on GitHub
 
 ---
 
-Built with ❤️ for the DigitalOcean Hackathon
+Built with ❤️ for Hack FLUX: Beyond One

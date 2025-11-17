@@ -112,12 +112,16 @@ Agent must verify all sources are within 2 days of target date before including 
 
 ### 5. Web App (Next.js on DO App Platform)
 - **Features**:
-  - Episode list with dates
-  - Audio player component
+  - Episode list with dates and "Latest" badges
+  - Persistent audio player with playback speed controls (0.5x - 2x, default 1.25x)
   - Show notes with topics and source links
-  - Manual triggers for full episode & teaser (demo/testing)
+  - Smart generation controls:
+    - "Generate Full Episode" button greys out when episode exists for today
+    - "Generate Teaser" button greys out when teaser exists for today
+    - Helpful messaging: "Generate a new one tomorrow"
   - Real-time generation progress indicators
-  - "Latest episode" highlight
+  - Auto-play when clicking episodes
+  - Uniform card heights for consistent UI
 
 ## API Endpoints
 
@@ -187,12 +191,12 @@ See `.env.example` for template.
 
 ### Phase 4: Frontend ✓
 - [x] Homepage with episode list
-- [x] Persistent audio player component
-- [x] Generation controls (manual triggers)
-- [x] Episode cards with show notes
+- [x] Persistent audio player component with speed controls (0.5x-2x, default 1.25x)
+- [x] Smart generation controls (grey out when content exists for today)
+- [x] Episode cards with show notes and source links
 - [x] Loading states and error handling
-- [x] Playback speed controls
 - [x] Auto-play when clicking episodes
+- [x] Consistent button widths and uniform card heights
 
 ### Phase 5: Scheduling ⚠️ ABANDONED
 - [x] ~~DO Functions implementation~~ - Reddit blocks cloud IPs

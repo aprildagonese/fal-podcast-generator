@@ -351,7 +351,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-500">
           <p>
-            Demo for DigitalOcean Hackathon | Built with Next.js, deployed on DO App Platform
+            Demo for Hack FLUX: Beyond One | Built with Next.js, deployed on DigitalOcean App Platform
           </p>
         </footer>
       </div>

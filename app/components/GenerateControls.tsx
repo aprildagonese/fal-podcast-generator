@@ -144,10 +144,6 @@ export default function GenerateControls({ onGenerated, hasEpisodes, hasTeasers 
           </p>
         </div>
       )}
-
-      <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        Powered by DO Gradient (Anthropic) + fal.ai TTS
-      </div>
     </div>
   );
 }
