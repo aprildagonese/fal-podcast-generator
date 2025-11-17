@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Episode, Teaser } from '@/lib/types';
 import EpisodeCard from './components/EpisodeCard';
 import GenerateControls from './components/GenerateControls';
@@ -14,6 +14,7 @@ export default function Home() {
   const [currentItem, setCurrentItem] = useState<Episode | Teaser | null>(null);
   const [showAllEpisodes, setShowAllEpisodes] = useState(false);
   const [showAllTeasers, setShowAllTeasers] = useState(false);
+  const [playerIsPlaying, setPlayerIsPlaying] = useState(false);
 
   const fetchEpisodes = async () => {
     try {
@@ -41,6 +42,10 @@ export default function Home() {
     // Refresh episodes list
     fetchEpisodes();
   };
+
+  const handlePlayingChange = useCallback((isPlaying: boolean) => {
+    setPlayerIsPlaying(isPlaying);
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-32">
@@ -134,8 +139,9 @@ export default function Home() {
                     key={episode.id}
                     episode={episode}
                     isLatest={index === 0}
-                    isPlaying={currentItem?.id === episode.id}
+                    isPlaying={currentItem?.id === episode.id && playerIsPlaying}
                     onPlay={() => setCurrentItem(episode)}
+                    onPause={() => setCurrentItem(null)}
                   />
                 ))}
               </div>
@@ -178,9 +184,15 @@ export default function Home() {
               {(showAllTeasers ? teasers : teasers.slice(0, 5)).map((teaser, index) => (
                 <button
                   key={teaser.id}
-                  onClick={() => setCurrentItem(teaser)}
+                  onClick={() => {
+                    if (currentItem?.id === teaser.id && playerIsPlaying) {
+                      setCurrentItem(null);
+                    } else {
+                      setCurrentItem(teaser);
+                    }
+                  }}
                   className={`text-left bg-white dark:bg-gray-800 border rounded-lg p-6 shadow-sm hover:shadow-md transition-all ${
-                    currentItem?.id === teaser.id
+                    currentItem?.id === teaser.id && playerIsPlaying
                       ? 'border-do-blue ring-2 ring-do-blue'
                       : 'border-gray-200 dark:border-gray-700'
                   }`}
@@ -191,7 +203,7 @@ export default function Home() {
                         Latest Teaser
                       </span>
                     )}
-                    {currentItem?.id === teaser.id && (
+                    {currentItem?.id === teaser.id && playerIsPlaying && (
                       <span className="text-xs bg-do-blue text-white px-2 py-1 rounded-full">
                         Playing
                       </span>
@@ -246,6 +258,7 @@ export default function Home() {
       <PersistentPlayer
         currentItem={currentItem}
         onClose={() => setCurrentItem(null)}
+        onPlayingChange={handlePlayingChange}
       />
     </main>
   );

@@ -6,38 +6,41 @@ import { Episode, Teaser } from '@/lib/types';
 interface PersistentPlayerProps {
   currentItem: Episode | Teaser | null;
   onClose: () => void;
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
-export default function PersistentPlayer({ currentItem, onClose }: PersistentPlayerProps) {
+export default function PersistentPlayer({ currentItem, onClose, onPlayingChange }: PersistentPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(1.25);
+  const onPlayingChangeRef = useRef(onPlayingChange);
 
-  // Reset playback when item changes
+  // Keep the callback ref up to date
   useEffect(() => {
-    if (audioRef.current && currentItem) {
-      audioRef.current.load();
-      audioRef.current.playbackRate = playbackRate; // Apply saved playback speed
-      setCurrentTime(0);
+    onPlayingChangeRef.current = onPlayingChange;
+  }, [onPlayingChange]);
 
-      // Auto-start playback (state will be updated by play/pause event listeners)
-      audioRef.current.play().catch((error) => {
-        console.error('Auto-play failed:', error);
-      });
-    }
-  }, [currentItem]);
-
+  // Set up event listeners when currentItem exists
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !currentItem) return;
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => setIsPlaying(false);
+    const handlePlay = () => {
+      setIsPlaying(true);
+      onPlayingChangeRef.current?.(true);
+    };
+    const handlePause = () => {
+      setIsPlaying(false);
+      onPlayingChangeRef.current?.(false);
+    };
+    const handleEnded = () => {
+      setIsPlaying(false);
+      onPlayingChangeRef.current?.(false);
+    };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
@@ -52,7 +55,25 @@ export default function PersistentPlayer({ currentItem, onClose }: PersistentPla
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, []);
+  }, [currentItem]); // Re-attach when currentItem changes
+
+  // Reset playback when item changes
+  useEffect(() => {
+    if (audioRef.current && currentItem) {
+      audioRef.current.load();
+      audioRef.current.playbackRate = playbackRate; // Apply saved playback speed
+      setCurrentTime(0);
+
+      // Auto-start playback (event listeners will update state)
+      audioRef.current.play().catch((error) => {
+        console.error('Auto-play failed:', error);
+      });
+    } else if (!currentItem) {
+      // Reset state when item is cleared
+      setIsPlaying(false);
+      if (onPlayingChange) onPlayingChange(false);
+    }
+  }, [currentItem, playbackRate, onPlayingChange]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
