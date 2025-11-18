@@ -36,10 +36,8 @@ Automated AI news podcast system showcasing **DigitalOcean Gradient**, **Anthrop
 ### 1. Data Collection (DO Knowledge Base)
 - **Auto-scraping** configured URLs daily (except Reddit - see below)
 - **Sources**:
-  - Hacker News (https://news.ycombinator.com/) - auto-scraped by Gradient KB
   - ArXiv cs.AI recent papers - auto-scraped by Gradient KB
   - Hugging Face daily papers - auto-scraped by Gradient KB
-  - MarkTechPost AI news - auto-scraped by Gradient KB
   - **Reddit posts** - manually synced (see Reddit Sync section below)
     - /r/MachineLearning
     - /r/LocalLLaMA
@@ -69,7 +67,6 @@ See `REDDIT_SYNC_SETUP.md` for full documentation.
 #### Date Parsing Logic (Critical for Source Selection)
 The prompt explicitly teaches the agent how to parse dates across different source formats:
 - **ArXiv**: `YYMM.NNNNN` format (e.g., `2511.08548` = November 2025)
-- **MarkTechPost**: `/YYYY/MM/DD/` in URL path
 - **Reddit**: `reddit-{subreddit}-YYYY-MM-DD.md` filename
 - **Hugging Face**: Similar to ArXiv
 
@@ -219,12 +216,12 @@ See `.env.example` for template.
 3. **"Generate Teaser" button** - fast 5-sec test (good for demos)
 4. **Visual progress** - show each step: Query → Script → TTS → Done
 5. **Show the script** before playing audio
-6. **Source links** - click through to original HN/Reddit/ArXiv posts
+6. **Source links** - click through to original Reddit/ArXiv/Hugging Face posts
 
 ### Talking Points for Presentation
-- "Knowledge Base automatically scrapes 6 AI news sources daily"
+- "Knowledge Base automatically scrapes AI research sources: ArXiv, Hugging Face, plus 3 Reddit communities"
 - "Gradient agent powered by Anthropic Claude summarizes the news"
-- "fal.ai TTS creates human-like audio via DO Serverless"
+- "fal.ai TTS creates human-like audio via DO Inference"
 - "Everything deployed on DigitalOcean App Platform"
 - "Click 'Generate' to create a new episode right now..."
 
@@ -330,7 +327,6 @@ curl -X POST http://localhost:3000/api/reddit-sync \
 
 **Root Cause:** Different source types use different date formats:
 - ArXiv: `YYMM.NNNNN` (e.g., `2511.08548` = Nov 2025)
-- MarkTechPost: `/YYYY/MM/DD/` in URL
 - Reddit: `reddit-{subreddit}-YYYY-MM-DD.md`
 
 **Solution:** Added explicit date parsing instructions to agent prompt in `lib/gradient.ts`:
@@ -348,7 +344,7 @@ curl -X POST http://localhost:3000/api/reddit-sync \
 **Root Cause:**
 - Rate limit: 30,000 input tokens per minute
 - Each request includes: prompt + agent instructions + **entire Knowledge Base**
-- With large KB (Hacker News, Reddit, ArXiv, etc.), each request = 15-20k tokens
+- With large KB (Reddit, ArXiv, Hugging Face), each request = 15-20k tokens
 - Can only make 1-2 requests/minute
 
 **Implications:**

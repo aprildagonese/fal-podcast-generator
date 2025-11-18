@@ -7,7 +7,7 @@ Automated daily AI news podcast powered by **DigitalOcean Gradient** (Anthropic 
 ## Features
 
 - 🤖 **AI-powered content generation** using Anthropic Claude Sonnet 4.5 via DO Gradient
-- 📰 **Automatic news aggregation** from Hacker News, ArXiv, Hugging Face, MarkTechPost
+- 📰 **Automatic news aggregation** from ArXiv, Hugging Face
 - 📱 **Manual Reddit sync** from r/MachineLearning, r/LocalLLaMA, r/artificial
 - 🎙️ **Natural-sounding TTS** using fal.ai's ElevenLabs Multilingual v2
 - ☁️ **Fully hosted on DigitalOcean** (App Platform + Spaces)
@@ -21,7 +21,7 @@ Automated daily AI news podcast powered by **DigitalOcean Gradient** (Anthropic 
 Manual Reddit Sync (local) → DO Spaces (reddit-sync/)
                                   ↓
 Knowledge Base (DO) ← Crawls at midnight UTC
-  ↓ (auto-scrapes Hacker News, ArXiv, etc.)
+  ↓ (auto-scrapes ArXiv, Hugging Face, Reddit sync)
   ↓
 Gradient Agent (Anthropic Claude Sonnet 4.5)
   ↓ (date-aware 2-step selection)
@@ -76,10 +76,8 @@ In the DigitalOcean Gradient platform:
 
 1. Create a new Knowledge Base
 2. Add these URLs to auto-scrape:
-   - `https://news.ycombinator.com/`
    - `https://arxiv.org/list/cs.AI/recent`
    - `https://huggingface.co/papers`
-   - `https://www.marktechpost.com/`
    - `https://YOUR-BUCKET.YOUR-REGION.digitaloceanspaces.com/reddit-sync/` (for Reddit posts)
 3. Set scraping schedule to daily (midnight UTC recommended)
 4. Create an Agent and link it to this Knowledge Base

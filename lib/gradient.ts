@@ -127,11 +127,6 @@ DATE PARSING BY SOURCE TYPE:
   Example: "2510.12345" = October 2025 (TOO OLD if today is Nov 14)
   Example: "2509.67890" = September 2025 (WAY TOO OLD)
 
-- MarkTechPost articles: Date in URL path "/YYYY/MM/DD/"
-  Example: "/2025/11/14/" = November 14, 2025 (TODAY - EXCELLENT)
-  Example: "/2025/11/13/" = November 13, 2025 (YESTERDAY - GOOD)
-  Example: "/2025/10/15/" = October 15, 2025 (TOO OLD)
-
 - Reddit posts: Filename format "reddit-SubredditName-YYYY-MM-DD.md"
   Example: "reddit-LocalLLaMA-2025-11-14.md" = November 14, 2025 (TODAY - EXCELLENT)
   Example: "reddit-MachineLearning-2025-11-13.md" = November 13, 2025 (YESTERDAY - GOOD)
@@ -151,7 +146,6 @@ From those 20 most recent items, select the 3-5 most impactful and newsworthy st
 Include a MIX of source types:
 - Research papers (ArXiv, Hugging Face)
 - Community discussions (Reddit)
-- Industry news (MarkTechPost, Hacker News)
 
 RETURN YOUR RESPONSE AS VALID, COMPLETE JSON with this exact structure:
 {
@@ -184,7 +178,7 @@ IMPORTANT: If using news from a day or two ago (not ${date}), don't mention exac
 
 EXAMPLE OF GOOD SOURCE SELECTION (if today is 2025-11-14):
 ✅ ArXiv paper "2511.08548" (November 2025 - GOOD, very recent)
-✅ MarkTechPost article from "/2025/11/13/" (Yesterday - GOOD)
+✅ Hugging Face paper from November 2025 (Recent - GOOD)
 ✅ Reddit "reddit-LocalLLaMA-2025-11-14.md" (Today - EXCELLENT)
 ❌ ArXiv paper "2510.04399" (October 2025 - TOO OLD)
 ❌ ArXiv paper "2509.21825" (September 2025 - WAY TOO OLD)

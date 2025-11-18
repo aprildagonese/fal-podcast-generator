@@ -32,13 +32,11 @@ Complete guide to deploying the AI News Podcast app to DigitalOcean.
 3. Name it: "AI News Sources"
 4. Add URLs to scrape:
    ```
-   https://news.ycombinator.com/
-   https://www.reddit.com/r/MachineLearning/
-   https://www.reddit.com/r/LocalLLaMA/
    https://arxiv.org/list/cs.AI/recent
    https://huggingface.co/papers
-   https://www.marktechpost.com/
+   https://YOUR-BUCKET.YOUR-REGION.digitaloceanspaces.com/reddit-sync/
    ```
+   **Note:** Don't add Reddit URLs directly - they'll be blocked. Instead, use manual Reddit sync to populate the reddit-sync/ folder.
 5. Set scraping schedule: **Daily at 7:00 AM UTC**
 6. Click **Save**
 
