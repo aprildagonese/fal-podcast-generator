@@ -2,7 +2,7 @@
 
 Automated daily AI news podcast powered by **DigitalOcean Gradient** (Anthropic Claude), **fal.ai TTS**, and deployed on **DigitalOcean App Platform**.
 
-![Demo Architecture](https://via.placeholder.com/800x400.png?text=AI+Podcast+Demo+Architecture)
+<img width="1181" height="650" alt="image" src="https://github.com/user-attachments/assets/06805fe4-acc7-4a31-96d6-afdc8def5148" />
 
 ## Features
 
