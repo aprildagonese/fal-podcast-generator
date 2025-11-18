@@ -22,7 +22,6 @@ Manual Reddit Sync (local) → DO Spaces (reddit-sync/)
                                   ↓
 Knowledge Base (DO) ← Crawls at midnight UTC
   ↓ (auto-scrapes ArXiv, Hugging Face, Reddit sync)
-  ↓
 Gradient Agent (Anthropic Claude Sonnet 4.5)
   ↓ (date-aware 2-step selection)
 Script Generator
@@ -39,8 +38,6 @@ Next.js 16 App (App Platform)
 ## Prerequisites
 
 - DigitalOcean account
-- Gradient API access (with Anthropic model)
-- fal.ai API key
 - Node.js 18+ and npm
 
 ## Quick Start
@@ -83,7 +80,7 @@ In the DigitalOcean Gradient platform:
 4. Create an Agent and link it to this Knowledge Base
 5. Copy the Agent endpoint URL and access key to your `.env` file
 
-**Note:** Don't add Reddit URLs directly - they'll be blocked. Instead, use the manual Reddit sync to populate the `reddit-sync/` folder in your Spaces bucket, and the KB will crawl that.
+**Note:** Don't add Reddit URLs directly - they'll be blocked from crawlers. Instead, use the manual Reddit sync to populate the `reddit-sync/` folder in your Spaces bucket, and the KB will crawl that.
 
 ### 4. Run Locally
 
