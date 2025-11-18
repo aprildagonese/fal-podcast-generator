@@ -1,6 +1,6 @@
 # AI News Podcast Generator
 
-Automated daily AI news podcast powered by **DigitalOcean Gradient** (Anthropic Claude), **fal.ai TTS**, and deployed on **DigitalOcean App Platform**.
+Daily AI news podcast powered by **DigitalOcean Gradient AI** using **Anthropic Claude Sonnet 4.5**, **fal.ai TTS**, and deployed on **DigitalOcean App Platform**.
 
 <img width="1181" height="650" alt="image" src="https://github.com/user-attachments/assets/06805fe4-acc7-4a31-96d6-afdc8def5148" />
 
