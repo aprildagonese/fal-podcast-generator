@@ -126,10 +126,19 @@ export default function Home() {
     }
   };
 
-  // Check if there's an episode or teaser for today
-  const today = new Date().toISOString().split('T')[0];
-  const hasEpisodeToday = episodes.some(ep => ep.id.startsWith(today));
-  const hasTeaserToday = teasers.some(teaser => teaser.id.startsWith(today));
+  // Check if there's an episode or teaser for today (using local timezone)
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format in local timezone
+
+  const hasEpisodeToday = episodes.some(ep => {
+    const epDate = new Date(ep.createdAt);
+    return epDate.toLocaleDateString('en-CA') === todayStr;
+  });
+
+  const hasTeaserToday = teasers.some(teaser => {
+    const teaserDate = new Date(teaser.createdAt);
+    return teaserDate.toLocaleDateString('en-CA') === todayStr;
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-32">

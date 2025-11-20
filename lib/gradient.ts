@@ -7,10 +7,6 @@ export async function queryAgent(
   prompt: string,
   mode: 'full' | 'teaser'
 ): Promise<AgentResponse | TeaserAgentResponse> {
-  console.log('Agent Endpoint:', AGENT_ENDPOINT);
-  console.log('Access Key exists:', !!AGENT_ACCESS_KEY);
-  console.log('Access Key length:', AGENT_ACCESS_KEY?.length);
-
   const response = await fetch(`${AGENT_ENDPOINT}/api/v1/chat/completions`, {
     method: 'POST',
     headers: {

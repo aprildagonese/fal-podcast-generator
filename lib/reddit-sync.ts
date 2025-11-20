@@ -19,6 +19,9 @@ const s3Client = new S3Client({
 
 const BUCKET = process.env.DO_SPACES_BUCKET!;
 
+// Helper to delay between requests
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export async function syncRedditToKB(): Promise<{
   success: boolean;
   synced: string[];
@@ -29,7 +32,14 @@ export async function syncRedditToKB(): Promise<{
   const errors: string[] = [];
   const urls: string[] = [];
 
-  for (const subreddit of SUBREDDITS) {
+  for (let i = 0; i < SUBREDDITS.length; i++) {
+    const subreddit = SUBREDDITS[i];
+
+    // Add delay between requests (except for first one)
+    if (i > 0) {
+      console.log('Waiting 2 seconds before next request...');
+      await sleep(2000);
+    }
     try {
       console.log(`Fetching posts from r/${subreddit}...`);
       const posts = await fetchSubredditPosts(subreddit, 25, 'day');
